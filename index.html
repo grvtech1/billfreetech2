@@ -21,7 +21,6 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
     }
     
-    /* Loading Screen with Gradient Animation */
     #loader {
       position: fixed;
       inset: 0;
@@ -130,7 +129,6 @@
       to { width: 100%; }
     }
     
-    /* Main iframe - Full screen */
     #app-frame {
       width: 100%;
       height: 100%;
@@ -139,7 +137,6 @@
       background: #F8FAFC;
     }
     
-    /* Error Screen */
     #error-screen {
       display: none;
       position: fixed;
@@ -158,7 +155,6 @@
     .error-content {
       text-align: center;
       max-width: 500px;
-      animation: fadeInUp 0.4s ease-out;
     }
     
     .error-icon {
@@ -196,19 +192,11 @@
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
+      transition: transform 0.2s ease;
     }
     
     .retry-button:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-    }
-    
-    .retry-button:active {
-      transform: translateY(0);
     }
     
     .direct-link {
@@ -224,7 +212,6 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      transition: all 0.2s ease;
     }
     
     .direct-link:hover {
@@ -232,112 +219,51 @@
       color: white;
     }
     
-    /* Offline Warning */
-    .offline-warning {
-      display: none;
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #FEF3C7;
-      color: #92400E;
-      padding: 12px 24px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      z-index: 10000;
-      font-size: 14px;
-      font-weight: 600;
-      animation: slideDown 0.3s ease-out;
-    }
-    
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-      }
-    }
-    
-    .offline-warning.show {
-      display: block;
-    }
-    
-    /* Responsive */
     @media (max-width: 768px) {
       .logo { font-size: 48px; }
       .loader-title { font-size: 24px; }
       .loader-subtitle { font-size: 13px; }
       .error-title { font-size: 20px; }
-      .error-message { font-size: 14px; }
       .button-group { flex-direction: column; }
-    }
-    
-    /* Accessibility */
-    .visually-hidden {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border-width: 0;
     }
   </style>
 </head>
 <body>
-  <!-- Loading Screen -->
-  <div id="loader" role="status" aria-live="polite">
+  <div id="loader">
     <div class="loader-content">
-      <div class="logo" aria-hidden="true">🎫</div>
-      <div class="spinner" aria-hidden="true"></div>
+      <div class="logo">🎫</div>
+      <div class="spinner"></div>
       <h1 class="loader-title">BillFree TechSupport Ops</h1>
       <p class="loader-subtitle">Loading your enterprise dashboard...</p>
       <p class="loader-version">v10.0 PRO • Powered by Cloudflare</p>
-      <div class="progress-bar" aria-hidden="true">
+      <div class="progress-bar">
         <div class="progress-fill"></div>
       </div>
-      <span class="visually-hidden">Please wait while we load the application</span>
     </div>
   </div>
   
-  <!-- Offline Warning -->
-  <div class="offline-warning" id="offline-warning" role="alert">
-    ⚠️ You're offline. Some features may not work.
-  </div>
-  
-  <!-- Error Screen -->
-  <div id="error-screen" role="alert">
+  <div id="error-screen">
     <div class="error-content">
-      <div class="error-icon" aria-hidden="true">⚠️</div>
+      <div class="error-icon">⚠️</div>
       <h1 class="error-title">Unable to Load Application</h1>
       <p class="error-message" id="error-message">
-        The application failed to load. This might be due to network issues or server problems.
+        The application failed to load. Please check your connection and try again.
       </p>
       <div class="button-group">
-        <button class="retry-button" onclick="location.reload()" aria-label="Retry loading the application">
-          <span aria-hidden="true">🔄</span>
-          <span>Retry</span>
+        <button class="retry-button" onclick="location.reload()">
+          🔄 Retry
         </button>
         <a 
           href="https://script.google.com/macros/s/AKfycbx91-C3ltCuLBjuK7oYaMpbJg92evR83237HT2ER7I5alaCCp0bNMgWFwCNnNqRLMajww/exec" 
           class="direct-link"
           target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Open application in new tab"
         >
-          <span aria-hidden="true">↗️</span>
-          <span>Open Directly</span>
+          ↗️ Open Directly
         </a>
       </div>
     </div>
   </div>
   
-  <!-- Main Application iframe -->
   <iframe 
     id="app-frame"
     src="https://script.google.com/macros/s/AKfycbx91-C3ltCuLBjuK7oYaMpbJg92evR83237HT2ER7I5alaCCp0bNMgWFwCNnNqRLMajww/exec"
@@ -346,38 +272,22 @@
     referrerpolicy="strict-origin-when-cross-origin"
     loading="eager"
     title="BillFree TechSupport Operations Dashboard"
-    aria-label="BillFree TechSupport Operations Management System"
   ></iframe>
   
   <script>
-    // ============================================
-    // CONFIGURATION
-    // ============================================
     const CONFIG = {
-      LOAD_TIMEOUT: 15000, // 15 seconds
-      APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx91-C3ltCuLBjuK7oYaMpbJg92evR83237HT2ER7I5alaCCp0bNMgWFwCNnNqRLMajww/exec',
-      ENABLE_ANALYTICS: true,
-      ENABLE_ERROR_REPORTING: true
+      LOAD_TIMEOUT: 15000,
+      APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx91-C3ltCuLBjuK7oYaMpbJg92evR83237HT2ER7I5alaCCp0bNMgWFwCNnNqRLMajww/exec'
     };
     
-    // ============================================
-    // DOM ELEMENTS
-    // ============================================
     const frame = document.getElementById('app-frame');
     const loader = document.getElementById('loader');
     const errorScreen = document.getElementById('error-screen');
-    const offlineWarning = document.getElementById('offline-warning');
     
-    // ============================================
-    // STATE
-    // ============================================
     let isLoaded = false;
     let loadTimeout = null;
     let loadStartTime = Date.now();
     
-    // ============================================
-    // IFRAME LOAD HANDLING
-    // ============================================
     frame.addEventListener('load', () => {
       isLoaded = true;
       clearTimeout(loadTimeout);
@@ -386,163 +296,43 @@
       
       setTimeout(() => {
         loader.classList.add('hidden');
-        loader.setAttribute('aria-hidden', 'true');
       }, 500);
       
       console.log('✅ BillFree Ops loaded successfully');
       console.log(`⏱️ Load time: ${loadTime}ms`);
-      
-      // Analytics
-      if (CONFIG.ENABLE_ANALYTICS) {
-        trackEvent('app_loaded', { load_time: loadTime });
-      }
     });
     
-    // ============================================
-    // ERROR HANDLING
-    // ============================================
-    frame.addEventListener('error', (event) => {
+    frame.addEventListener('error', () => {
       handleLoadError('Failed to load the application. Please check your internet connection.');
-      console.error('❌ iframe load error:', event);
     });
     
-    // Timeout fallback
     loadTimeout = setTimeout(() => {
       if (!isLoaded) {
-        handleLoadError('Application is taking too long to load. This might be due to slow network or server issues.');
-        console.warn('⏰ Load timeout reached');
+        handleLoadError('Application is taking too long to load. This might be due to slow network.');
       }
     }, CONFIG.LOAD_TIMEOUT);
     
     function handleLoadError(message) {
       loader.classList.add('hidden');
-      loader.setAttribute('aria-hidden', 'true');
       errorScreen.classList.add('show');
-      errorScreen.removeAttribute('aria-hidden');
       document.getElementById('error-message').textContent = message;
-      
-      if (CONFIG.ENABLE_ERROR_REPORTING) {
-        trackEvent('app_error', { error: message });
-      }
     }
     
-    // ============================================
-    // ONLINE/OFFLINE DETECTION
-    // ============================================
-    window.addEventListener('online', () => {
-      offlineWarning.classList.remove('show');
-      console.log('🌐 Connection restored');
-      
-      // Auto-retry if we're on error screen
-      if (errorScreen.classList.contains('show')) {
-        setTimeout(() => location.reload(), 1000);
-      }
-    });
-    
-    window.addEventListener('offline', () => {
-      offlineWarning.classList.add('show');
-      console.log('📡 Connection lost');
-    });
-    
-    // ============================================
-    // SECURITY: PREVENT CLICKJACKING
-    // ============================================
     if (window.self !== window.top) {
       document.body.innerHTML = `
         <div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui;">
-          <div style="text-align:center;max-width:500px;padding:40px;">
+          <div style="text-align:center;padding:40px;">
             <h1 style="font-size:48px;margin-bottom:20px;">🔒</h1>
             <h2 style="color:#1E293B;margin-bottom:12px;">Security Error</h2>
-            <p style="color:#64748B;">This application cannot be embedded in other websites for security reasons.</p>
-            <a href="${CONFIG.APPS_SCRIPT_URL}" style="display:inline-block;margin-top:24px;padding:12px 24px;background:#667eea;color:white;text-decoration:none;border-radius:8px;font-weight:600;">Open Application</a>
+            <p style="color:#64748B;">This application cannot be embedded for security reasons.</p>
+            <a href="${CONFIG.APPS_SCRIPT_URL}" style="display:inline-block;margin-top:24px;padding:12px 24px;background:#667eea;color:white;text-decoration:none;border-radius:8px;">Open Application</a>
           </div>
         </div>
       `;
     }
     
-    // ============================================
-    // CROSS-ORIGIN COMMUNICATION (OPTIONAL)
-    // ============================================
-    window.addEventListener('message', (event) => {
-      // Verify origin for security
-      if (!event.origin.includes('script.google.com')) {
-        console.warn('⚠️ Message from untrusted origin:', event.origin);
-        return;
-      }
-      
-      console.log('📨 Message from app:', event.data);
-      
-      // Handle custom events from your Apps Script app
-      if (event.data && event.data.type) {
-        switch (event.data.type) {
-          case 'ready':
-            console.log('🚀 App reported ready state');
-            break;
-          case 'error':
-            console.error('❌ App reported error:', event.data.message);
-            break;
-          default:
-            console.log('📬 Unhandled message type:', event.data.type);
-        }
-      }
-    });
-    
-    // ============================================
-    // PERFORMANCE MONITORING
-    // ============================================
-    window.addEventListener('load', () => {
-      const perfData = performance.timing;
-      const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
-      const connectTime = perfData.responseEnd - perfData.requestStart;
-      
-      console.log('📊 Performance Metrics:');
-      console.log(`  - Page load: ${pageLoadTime}ms`);
-      console.log(`  - Connect time: ${connectTime}ms`);
-      console.log(`  - DOM ready: ${perfData.domContentLoadedEventEnd - perfData.navigationStart}ms`);
-      
-      if (CONFIG.ENABLE_ANALYTICS) {
-        trackEvent('performance', {
-          page_load: pageLoadTime,
-          connect_time: connectTime
-        });
-      }
-    });
-    
-    // ============================================
-    // ANALYTICS (OPTIONAL)
-    // ============================================
-    function trackEvent(eventName, properties = {}) {
-      // You can integrate with Google Analytics, Plausible, etc.
-      console.log('📊 Event:', eventName, properties);
-      
-      // Example: Send to Google Analytics (if you add it)
-      // if (typeof gtag !== 'undefined') {
-      //   gtag('event', eventName, properties);
-      // }
-    }
-    
-    // ============================================
-    // KEYBOARD SHORTCUTS
-    // ============================================
-    document.addEventListener('keydown', (e) => {
-      // Ctrl+R or F5 - Reload
-      if ((e.ctrlKey && e.key === 'r') || e.key === 'F5') {
-        console.log('🔄 Manual reload triggered');
-      }
-      
-      // Ctrl+Shift+D - Toggle DevTools hint
-      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-        console.log('💡 Press F12 to open DevTools');
-      }
-    });
-    
-    // ============================================
-    // INITIALIZATION
-    // ============================================
     console.log('🎫 BillFree TechSupport Ops v10.0 PRO');
-    console.log('⚡ Powered by Cloudflare Pages');
-    console.log('🔗 Backend:', CONFIG.APPS_SCRIPT_URL);
-    console.log('⏰ Timestamp:', new Date().toISOString());
+    console.log('⚡ Powered by You');
   </script>
 </body>
 </html>
