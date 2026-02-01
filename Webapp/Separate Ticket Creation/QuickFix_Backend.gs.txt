@@ -1,0 +1,592 @@
+// ============================================
+// QUICK-FIX TICKET SYSTEM - INTEGRATED v5.0 (Refactored)
+// BillFree TechSupport Operations
+// Last Updated: January 29, 2026
+// 
+// FIXES APPLIED:
+// ✅ Integrated with CoreService (Shared Library)
+// ✅ Writing Phone Number to new Column O
+// ✅ Removed hardcoded configuration
+// ✅ Standardized ID generation and Sanitization
+// ============================================
+
+
+// ============================================
+// CONFIGURATION & CORE INTEGRATION
+// ============================================
+
+// 🔌 Use CoreService for Single Source of Truth
+const SHEET_ID = CoreService.getSheetId();
+const SHEET_NAME = CoreService.getConfig('SHEET_NAME');
+
+// 👥 Get Agents from CoreService
+// Map simple name array for round-robin logic
+const AGENTS = CoreService.getAgentsList().map(a => a.name);
+
+
+// 📱 AGENT CONTACT INFO (Stored securely in PropertiesService)
+// Use getAgentPhoneSecure() function to retrieve
+// Run initializeAgentPhones() once after updating phone numbers
+function getAgentPhoneSecure(agentName) {
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const key = `AGENT_PHONE_${agentName.replace(/\s/g, '_').toUpperCase()}`;
+    return props.getProperty(key) || null;
+  } catch (e) {
+    Logger.log('Error retrieving agent phone: ' + e.toString());
+    return null;
+  }
+}
+
+// 🔧 INITIALIZATION: Run once to store phone numbers securely
+// Update the phone numbers in this function, run it, then remove sensitive data
+function initializeAgentPhonesSecure() {
+  const props = PropertiesService.getScriptProperties();
+  props.setProperties({
+    'AGENT_PHONE_MANJEET': '919310134928',
+    'AGENT_PHONE_SURAJ': '919310137375',
+    'AGENT_PHONE_VEER_BAHADUR': '919310035088'
+  });
+  Logger.log('✅ Agent phone numbers initialized in PropertiesService (removed from source code)');
+  return 'Phone numbers stored securely';
+}
+
+
+// 🎯 SUPPORT TYPE CONFIGURATION
+const SUPPORT_TYPES = {
+  CUSTOMER: 'Customer Support',
+  IT_FLOOR: 'IT Floor Support'
+};
+
+
+
+// 🔒 RATE LIMITING
+const RATE_LIMIT = {
+  MAX_REQUESTS: 10,
+  WINDOW_SECONDS: 60,
+  ENABLED: true
+};
+
+
+// ============================================
+// 🛡️ CSRF PROTECTION
+// ============================================
+
+/**
+ * Generate CSRF Token for form protection
+ * @returns {string} UUID token stored in user cache
+ */
+function generateCSRFToken() {
+  const token = Utilities.getUuid();
+  const cache = CacheService.getUserCache();
+  cache.put('QUICKFIX_CSRF_TOKEN', token, 3600); // 1 hour TTL
+  return token;
+}
+
+/**
+ * Validate CSRF Token from form submission
+ * @param {string} token - Token from form
+ * @returns {boolean} True if valid
+ */
+function validateCSRFToken(token) {
+  if (!token) return false;
+  const cache = CacheService.getUserCache();
+  const storedToken = cache.get('QUICKFIX_CSRF_TOKEN');
+  return storedToken && token === storedToken;
+}
+
+/**
+ * Get CSRF Token (for frontend injection)
+ * Called by frontend to get token for form submission
+ * @returns {string} JSON with success and token
+ */
+function getCSRFToken() {
+  try {
+    const cache = CacheService.getUserCache();
+    let token = cache.get('QUICKFIX_CSRF_TOKEN');
+    if (!token) {
+      token = generateCSRFToken();
+    }
+    return JSON.stringify({ success: true, token: token });
+  } catch (e) {
+    Logger.log('CSRF Token error: ' + e.toString());
+    return JSON.stringify({ success: false, error: e.toString() });
+  }
+}
+
+
+// ============================================
+// MAIN FUNCTIONS
+// ============================================
+
+
+/**
+ * SERVE THE HTML FORM
+ */
+function doGet() {
+  try {
+    const htmlOutput = HtmlService.createHtmlOutputFromFile('QuickFixForm');
+    htmlOutput.setTitle('BillFree - Quick-Fix Ticket Portal');
+    htmlOutput.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    return htmlOutput;
+    
+  } catch (e) {
+    Logger.log('❌ ERROR in doGet: ' + e.toString());
+    return HtmlService.createHtmlOutput('<h1>Configuration Error</h1><p>Ensure QuickFixForm.html exists.</p>');
+  }
+}
+
+
+/**
+ * CREATE QUICK-FIX TICKET
+ * Main ticket creation function with full integration
+ */
+function createQuickFixTicket(ticketData) {
+  const correlationId = generateCorrelationId();
+  const startTime = Date.now();
+  let ticketId = null; 
+  let agent = null; 
+  let newRowNumber = null;
+  
+  try {
+    Logger.log(`[${correlationId}] 🎫 QUICK-FIX TICKET CREATION STARTED`);
+    
+    // STEP 1: RATE LIMITING
+    if (RATE_LIMIT.ENABLED) {
+      const rateLimitResult = checkRateLimit();
+      if (!rateLimitResult.allowed) {
+        return createErrorResponse('Too many requests. Please wait a moment.', correlationId);
+      }
+    }
+    
+    // STEP 2: INPUT VALIDATION
+    const validation = validateTicketInput(ticketData);
+    if (!validation.valid) {
+      return createErrorResponse(validation.error, correlationId);
+    }
+    
+    // STEP 3: DATA SANITIZATION (Using CoreService)
+    const sanitized = sanitizeTicketData(ticketData);
+    
+    // STEP 4: CONNECT & LOCK
+    const lock = LockService.getScriptLock();
+    if (!lock.tryLock(15000)) {
+      return createErrorResponse('System busy. Please try again.', correlationId);
+    }
+    
+    try {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      const sheet = ss.getSheetByName(SHEET_NAME);
+      
+      if (!sheet) throw new Error(`Sheet "${SHEET_NAME}" not found.`);
+      
+      // STEP 5: ASSIGN AGENT
+      agent = autoAssignAgent();
+      
+      // STEP 6: GENERATE TICKET ID (Using CoreService)
+      ticketId = CoreService.generateTicketId(sheet);
+      Logger.log(`[${correlationId}] ✅ Generated ID: ${ticketId}`);
+      
+      // STEP 7: BUILD REMARK
+      const remarkText = buildRemarkText(sanitized);
+      
+      // STEP 8: PREPARE ROW DATA (15 columns - Aligned with actual sheet)
+      const now = new Date();
+      const userEmail = getUserEmail();
+      
+      const rowData = [
+        ticketId,                                    // A: Ticket ID
+        now,                                         // B: Timestamp
+        userEmail,                                   // C: Email Address
+        agent,                                       // D: IT Person
+        sanitized.business,                          // E: Requested By (Filled with Business Name) ✅
+        sanitized.mid,                               // F: MID
+        sanitized.business,                          // G: Business Name
+        sanitized.pos,                               // H: POS ✅ CORRECTED
+        sanitized.supportType,                       // I: Support Type ✅ CORRECTED
+        sanitized.concern,                           // J: Concern Related to ✅ CORRECTED
+        '',                                          // K: Configuration
+        remarkText,                                  // L: Remark if any
+        'Not Completed',                             // M: Status
+        '',                                          // N: Reason for Incomplete
+        sanitized.phoneFormatted                     // O: Phone Number (✨ NEW)
+      ];
+      
+      // STEP 9: WRITE TO SHEET
+      sheet.appendRow(rowData);
+      newRowNumber = sheet.getLastRow();
+      SpreadsheetApp.flush();
+      
+    } finally {
+      lock.releaseLock();
+    }
+    
+    // STEP 10: SYNCHRONIZE WITH MAIN WEBAPP
+    try {
+      invalidateTicketIndex();
+      invalidateTicketCache();
+      incrementDataVersion();
+    } catch (e) {
+      Logger.log(`[${correlationId}] ⚠️ Sync warning: ${e}`);
+    }
+    
+    
+    // STEP 12: AUDIT LOG
+    logAuditEvent('QUICKFIX_TICKET_CREATED', ticketId, {
+      agent: agent,
+      mid: sanitized.mid,
+      phone: sanitized.phoneFormatted
+    });
+    
+    // STEP 13: SUCCESS RESPONSE
+    return createSuccessResponse({
+      ticketId: ticketId,
+      assignedAgent: agent,
+      message: 'Ticket created successfully!',
+      phone: sanitized.phoneFormatted
+    }, correlationId);
+    
+  } catch (error) {
+    Logger.log(`[${correlationId}] ❌ Error: ${error.toString()}`);
+    return createErrorResponse('An error occurred.', correlationId, { technicalError: error.toString() });
+  }
+}
+
+
+/**
+ * GET TICKET STATUS (WITH AUTHENTICATION)
+ */
+function getTicketStatus(searchValue) {
+  const correlationId = generateCorrelationId();
+  try {
+    // ✅ ADD AUTHENTICATION - Prevent unauthorized access to phone numbers
+    const user = Session.getActiveUser();
+    if (!user || !user.getEmail()) {
+      return createErrorResponse('Authentication required - Please log in with your Google Account', correlationId);
+    }
+    
+    if (!searchValue || searchValue.trim() === '') return createErrorResponse('Enter ID or MID', correlationId);
+    const searchTerm = String(searchValue).trim().toUpperCase();
+    
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = ss.getSheetByName(SHEET_NAME);
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return createErrorResponse('No tickets found', correlationId);
+    
+    // Read up to Col O (15 cols)
+    const data = sheet.getRange(1, 1, lastRow, 15).getValues();
+    let foundTicket = null;
+    
+    for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        if (String(row[0]).trim().toUpperCase() === searchTerm || String(row[5]).trim().toUpperCase() === searchTerm) {
+             foundTicket = {
+                id: row[0],                    // A: Ticket ID
+                timestamp: row[1],             // B: Timestamp/Date
+                email: row[2],                 // C: Email Address
+                agent: row[3],                 // D: IT Person
+                requestedBy: row[4],           // E: Requested By
+                mid: row[5],                   // F: MID
+                business: row[6],              // G: Business Name
+                pos: row[7],                   // H: POS ✅ CORRECTED (was supportType)
+                supportType: row[8],           // I: Support Type ✅ CORRECTED (was concern)
+                concern: row[9],               // J: Concern Related to ✅ CORRECTED (was pos)
+                config: row[10],               // K: Configuration
+                remark: row[11],               // L: Remark if any
+                status: row[12],               // M: Status
+                reason: row[13],               // N: Reason for Incomplete
+                phone: row[14]                 // O: Phone Number
+             };
+             break;
+        }
+    }
+    
+    if (!foundTicket) return createErrorResponse('Ticket not found', correlationId);
+    return createSuccessResponse({ ticket: foundTicket }, correlationId);
+    
+  } catch (e) {
+    return createErrorResponse('Status check failed', correlationId);
+  }
+}
+
+
+// ============================================
+// VALIDATION & SANITIZATION (Refactored)
+// ============================================
+
+function validateTicketInput(ticketData) {
+  if (!ticketData) return { valid: false, error: 'No data' };
+  if (!ticketData.mid) return { valid: false, error: 'MID required' };
+  if (!ticketData.phone) return { valid: false, error: 'Phone required' };
+  
+  // Use CoreService for phone validation logic if needed, 
+  // but simpler to check length here as CoreService.sanitize strips it
+  const cleanPhone = CoreService.sanitize(ticketData.phone, 'phone');
+  if (cleanPhone.length !== 10) return { valid: false, error: 'Phone must be 10 digits' };
+  
+  return { valid: true };
+}
+
+function sanitizeTicketData(ticketData) {
+  return {
+    mid: CoreService.sanitize(ticketData.mid).substring(0, 50),
+    business: CoreService.sanitize(ticketData.business).substring(0, 200),
+    phone: CoreService.sanitize(ticketData.phone, 'phone'),
+    phoneFormatted: CoreService.formatPhone(ticketData.phone),
+    supportType: ticketData.supportType || SUPPORT_TYPES.CUSTOMER,
+    pos: ticketData.pos ? CoreService.sanitize(ticketData.pos).substring(0, 50) : '-',
+    concern: CoreService.sanitize(ticketData.concern).substring(0, 5000)
+  };
+}
+
+
+// ============================================
+// HELPERS
+// ============================================
+
+function autoAssignAgent() {
+  try {
+    const props = PropertiesService.getScriptProperties();
+    let idx = parseInt(props.getProperty('AGENT_INDEX') || '0');
+    if (idx >= AGENTS.length) idx = 0;
+    const agent = AGENTS[idx];
+    props.setProperty('AGENT_INDEX', String((idx + 1) % AGENTS.length));
+    return agent;
+  } catch (e) { return AGENTS[0]; }
+}
+
+function buildRemarkText(sanitized) {
+  // ✅ Phone is now stored in dedicated Column O
+  // No need to duplicate in remark field
+  return '';
+}
+
+/**
+ * 📧 GET USER EMAIL (Enhanced)
+ * Multiple fallback strategies for robust email capture
+ * Works with different deployment configurations
+ */
+function getUserEmail() {
+  try {
+    // Strategy 1: Active User (works when deployed as "User accessing the app")
+    const activeUser = Session.getActiveUser();
+    if (activeUser) {
+      const email = activeUser.getEmail();
+      if (email && email.length > 0 && email.includes('@')) {
+        Logger.log('✅ Email from ActiveUser: ' + email);
+        return email;
+      }
+    }
+    
+    // Strategy 2: Effective User (works when deployed as "Me")
+    const effectiveUser = Session.getEffectiveUser();
+    if (effectiveUser) {
+      const email = effectiveUser.getEmail();
+      if (email && email.length > 0 && email.includes('@')) {
+        Logger.log('✅ Email from EffectiveUser: ' + email);
+        return email;
+      }
+    }
+    
+    // Strategy 3: Check if stored in user properties (for repeat users)
+    const userProps = PropertiesService.getUserProperties();
+    const storedEmail = userProps.getProperty('QUICKFIX_USER_EMAIL');
+    if (storedEmail && storedEmail.includes('@')) {
+      Logger.log('✅ Email from UserProperties: ' + storedEmail);
+      return storedEmail;
+    }
+    
+    // Fallback: Default portal email
+    return 'portal-user@billfree.in';
+    
+  } catch (e) {
+    Logger.log('⚠️ Email detection error: ' + e.toString());
+    return 'portal-user@billfree.in';
+  }
+}
+
+/**
+ * 📧 GET CURRENT USER EMAIL (API for Frontend)
+ * Called by frontend on page load to pre-fill email field
+ * @returns {string} JSON response with email and detection method
+ */
+function getCurrentUserEmail() {
+  try {
+    let email = '';
+    let method = 'none';
+    
+    // Try ActiveUser first
+    try {
+      const activeUser = Session.getActiveUser();
+      if (activeUser) {
+        const activeEmail = activeUser.getEmail();
+        if (activeEmail && activeEmail.length > 0 && activeEmail.includes('@')) {
+          email = activeEmail;
+          method = 'activeUser';
+        }
+      }
+    } catch (e) { /* Ignore */ }
+    
+    // Fallback to EffectiveUser
+    if (!email) {
+      try {
+        const effectiveUser = Session.getEffectiveUser();
+        if (effectiveUser) {
+          const effEmail = effectiveUser.getEmail();
+          if (effEmail && effEmail.length > 0 && effEmail.includes('@')) {
+            email = effEmail;
+            method = 'effectiveUser';
+          }
+        }
+      } catch (e) { /* Ignore */ }
+    }
+    
+    // Store for future use if we got a valid email
+    if (email && method !== 'none') {
+      try {
+        PropertiesService.getUserProperties().setProperty('QUICKFIX_USER_EMAIL', email);
+      } catch (e) { /* Non-critical */ }
+    }
+    
+    return JSON.stringify({
+      success: true,
+      email: email || '',
+      method: method,
+      isAutoDetected: method !== 'none'
+    });
+    
+  } catch (e) {
+    Logger.log('getCurrentUserEmail error: ' + e.toString());
+    return JSON.stringify({
+      success: false,
+      email: '',
+      method: 'error',
+      isAutoDetected: false,
+      error: e.toString()
+    });
+  }
+}
+
+/**
+ * 📧 STORE USER EMAIL (For manual entry by user)
+ * Saves user email for future auto-fill
+ */
+function storeUserEmail(email) {
+  try {
+    if (email && email.includes('@')) {
+      PropertiesService.getUserProperties().setProperty('QUICKFIX_USER_EMAIL', email);
+      return JSON.stringify({ success: true });
+    }
+    return JSON.stringify({ success: false, error: 'Invalid email' });
+  } catch (e) {
+    return JSON.stringify({ success: false, error: e.toString() });
+  }
+}
+
+function generateCorrelationId() {
+  return `QF-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+}
+
+
+// ============================================
+// CACHE & SYNC (Preserved)
+// ============================================
+
+function incrementDataVersion() {
+  const props = PropertiesService.getScriptProperties();
+  const ver = parseInt(props.getProperty('DATA_VERSION') || '0') + 1;
+  props.setProperty('DATA_VERSION', String(ver));
+  return ver;
+}
+
+function invalidateTicketIndex() {
+  try { CacheService.getScriptCache().remove('TICKET_INDEX'); } catch (e) {}
+}
+
+function invalidateTicketCache() {
+  try {
+     const cache = CacheService.getScriptCache();
+     cache.remove('TICKET_CACHE_META');
+     const keys = [];
+     for(let i=0; i<10; i++) keys.push('TICKETS_V2_'+i);
+     cache.removeAll(keys);
+  } catch(e) {}
+}
+
+
+// ============================================
+// AUDIT LOGGING (Restored)
+// ============================================
+
+function logAuditEvent(action, ticketId, details, severity) {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    let auditSheet = ss.getSheetByName('Audit Log');
+    
+    if (!auditSheet) {
+      auditSheet = ss.insertSheet('Audit Log');
+      auditSheet.appendRow(['Timestamp', 'User Email', 'Action', 'Ticket ID', 'Details', 'Severity', 'IP/Session', 'Version']);
+      auditSheet.getRange(1, 1, 1, 8).setFontWeight('bold').setBackground('#F1F5F9');
+      auditSheet.setFrozenRows(1);
+    }
+    
+    auditSheet.appendRow([
+      new Date(),
+      getUserEmail(),
+      action,
+      ticketId || '-',
+      JSON.stringify(details),
+      severity || 'INFO',
+      Session.getTemporaryActiveUserKey() || 'N/A',
+      '5.1'
+    ]);
+  } catch (e) {
+    Logger.log('⚠️ Audit log error: ' + e.toString());
+  }
+}
+
+
+// ============================================
+// RATE LIMITING (Restored)
+// ============================================
+
+function checkRateLimit() {
+  try {
+    const userEmail = getUserEmail();
+    const cache = CacheService.getUserCache();
+    const key = 'rate_limit_' + userEmail.replace(/[^a-zA-Z0-9]/g, '_');
+    
+    const currentCount = parseInt(cache.get(key) || '0');
+    
+    if (currentCount >= RATE_LIMIT.MAX_REQUESTS) {
+      return { allowed: false, count: currentCount };
+    }
+    
+    cache.put(key, String(currentCount + 1), RATE_LIMIT.WINDOW_SECONDS);
+    return { allowed: true, count: currentCount + 1 };
+    
+  } catch (e) {
+    return { allowed: true, count: 0 };
+  }
+}
+
+function createSuccessResponse(data, cid) {
+  return JSON.stringify({
+    success: true,
+    data: data,
+    correlationId: cid,
+    timestamp: new Date().toISOString(),
+    version: '5.1'
+  });
+}
+
+function createErrorResponse(err, cid, details) {
+  return JSON.stringify({
+    success: false,
+    error: err,
+    correlationId: cid,
+    details: details,
+    timestamp: new Date().toISOString(),
+    version: '5.1'
+  });
+}

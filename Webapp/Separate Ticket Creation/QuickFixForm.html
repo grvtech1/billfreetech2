@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#667eea">
+  <meta name="description" content="BillFree Quick-Fix Ticket Portal - Fast support for your business">
+  <title>BillFree - Quick-Fix Ticket Portal</title>
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    crossorigin="anonymous">
+
+  <style>
+    /* ==================== REASON/NOTES BOX STYLES ==================== */
+    .reason-box {
+      margin-top: 24px;
+      padding: 18px 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Incomplete - Orange/Warning */
+    .reason-box.reason-incomplete {
+      background: #FEF3C7;
+      border-left: 5px solid #F59E0B;
+    }
+
+    .reason-box.reason-incomplete .reason-label {
+      color: #78350F;
+    }
+
+    /* Closed - Blue/Info */
+    .reason-box.reason-closed {
+      background: #DBEAFE;
+      border-left: 5px solid #3B82F6;
+    }
+
+    .reason-box.reason-closed .reason-label {
+      color: #1E3A8A;
+    }
+
+    /* Can't Do - Red/Error */
+    .reason-box.reason-cant-do {
+      background: #FEE2E2;
+      border-left: 5px solid #DC2626;
+    }
+
+    .reason-box.reason-cant-do .reason-label {
+      color: #991B1B;
+    }
+
+    /* Empty reason - Gray */
+    .reason-box.empty {
+      background: #F1F5F9;
+      border-left: 5px solid #94A3B8;
+    }
+
+    .reason-label {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .reason-text {
+      font-size: 14px;
+      color: #1E293B;
+      line-height: 1.7;
+      font-weight: 500;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+
+
+    /* ============================================
+       RESET & GLOBAL STYLES
+       ============================================ */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      line-height: 1.6;
+      color: #1E293B;
+    }
+
+    /* ============================================
+       CONTAINER
+       ============================================ */
+    .container {
+      max-width: 750px;
+      margin: 0 auto;
+      animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(40px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ============================================
+       HEADER BRANDING
+       ============================================ */
+    .header-brand {
+      text-align: center;
+      padding: 20px 0;
+      margin-bottom: 20px;
+    }
+
+    .header-brand h1 {
+      color: white;
+      font-size: 28px;
+      font-weight: 800;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .header-brand p {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* ============================================
+       TAB NAVIGATION
+       ============================================ */
+    .tab-navigation {
+      background: white;
+      border-radius: 16px 16px 0 0;
+      display: flex;
+      overflow: hidden;
+      box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+      margin-bottom: 0;
+    }
+
+    .tab-button {
+      flex: 1;
+      padding: 18px 20px;
+      background: #F1F5F9;
+      border: none;
+      font-size: 15px;
+      font-weight: 700;
+      color: #64748B;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-bottom: 3px solid transparent;
+    }
+
+    .tab-button:hover {
+      background: #E2E8F0;
+      color: #475569;
+      transform: translateY(-1px);
+    }
+
+    .tab-button.active {
+      background: white;
+      color: #667eea;
+      border-bottom: 3px solid #667eea;
+    }
+
+    .tab-button i {
+      font-size: 16px;
+    }
+
+    /* ============================================
+       CHEAT SHEET
+       ============================================ */
+    .cheat-sheet {
+      background: white;
+      border-radius: 0 0 16px 16px;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      border-left: 6px solid #EF4444;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .cheat-sheet-title {
+      font-size: 21px;
+      font-weight: 800;
+      color: #1E293B;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .cheat-sheet-title i {
+      font-size: 26px;
+      color: #EF4444;
+    }
+
+    .cheat-sheet-subtitle {
+      font-size: 16px;
+      font-weight: 700;
+      color: #DC2626;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      background: #FEE2E2;
+      border-radius: 10px;
+      border-left: 4px solid #DC2626;
+    }
+
+    .checklist {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .checklist li {
+      padding: 14px 18px;
+      margin-bottom: 12px;
+      background: #F8FAFC;
+      border-radius: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      font-size: 14px;
+      color: #1E293B;
+      line-height: 1.6;
+      border: 2px solid #E2E8F0;
+      transition: all 0.25s ease;
+    }
+
+    .checklist li:hover {
+      background: #EEF2FF;
+      border-color: #667eea;
+      transform: translateX(4px);
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+    }
+
+    .checklist li i {
+      font-size: 18px;
+      color: #667eea;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .checklist li strong {
+      color: #0F172A;
+    }
+
+    .magic-fix {
+      background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%);
+      border: 3px solid #D97706 !important;
+      color: #78350F;
+      font-weight: 700;
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+
+    .magic-fix i {
+      color: #D97706 !important;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        transform: scale(1);
+      }
+
+      50% {
+        box-shadow: 0 4px 20px rgba(245, 158, 11, 0.5), 0 0 0 8px rgba(245, 158, 11, 0.1);
+        transform: scale(1.01);
+      }
+    }
+
+    /* ============================================
+       FORM CARDS
+       ============================================ */
+    .form-card {
+      background: white;
+      border-radius: 16px;
+      padding: 36px 32px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      display: none;
+    }
+
+    .form-card.active {
+      display: block;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .form-header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 2px solid #E2E8F0;
+    }
+
+    .form-header h1 {
+      font-size: 26px;
+      color: #1E293B;
+      margin-bottom: 10px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .form-header h1 i {
+      margin-right: 8px;
+      color: #667eea;
+    }
+
+    .form-header .subtitle {
+      font-size: 14px;
+      color: #64748B;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    .form-header .badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    /* ============================================
+       FORM ELEMENTS
+       ============================================ */
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      margin-bottom: 10px;
+      display: block;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .form-label .required {
+      color: #DC2626;
+      margin-left: 4px;
+      font-size: 14px;
+    }
+
+    .form-label .optional {
+      color: #94A3B8;
+      font-size: 10px;
+      font-weight: 600;
+      margin-left: 6px;
+      text-transform: lowercase;
+      letter-spacing: 0.3px;
+    }
+
+    .form-input,
+    .form-textarea,
+    .form-select {
+      width: 100%;
+      padding: 15px 18px;
+      border: 2px solid #E2E8F0;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      color: #1E293B;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      background: white;
+    }
+
+    .form-input::placeholder,
+    .form-textarea::placeholder {
+      color: #94A3B8;
+      font-weight: 400;
+    }
+
+    .form-select {
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%23475569' d='M7 10L2 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 18px center;
+      background-size: 14px;
+      padding-right: 50px;
+      appearance: none;
+    }
+
+    .form-input:hover,
+    .form-textarea:hover,
+    .form-select:hover {
+      border-color: #CBD5E1;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus,
+    .form-select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-textarea {
+      min-height: 140px;
+      resize: vertical;
+      line-height: 1.7;
+      max-height: 400px;
+    }
+
+    .form-hint {
+      font-size: 12px;
+      color: #94A3B8;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      line-height: 1.5;
+    }
+
+    .form-hint i {
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    /* ============================================
+       BUTTONS
+       ============================================ */
+    .btn-container {
+      display: flex;
+      gap: 14px;
+      margin-top: 32px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 17px 28px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      letter-spacing: 0.3px;
+    }
+
+    .btn i {
+      font-size: 16px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: #F1F5F9;
+      color: #475569;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-secondary:hover {
+      background: #E2E8F0;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* ============================================
+       LOADING STATE
+       ============================================ */
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 50px 20px;
+    }
+
+    .spinner {
+      width: 55px;
+      height: 55px;
+      border: 5px solid #E2E8F0;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading p {
+      color: #64748B;
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    /* ============================================
+       SUCCESS & ERROR MESSAGES
+       ============================================ */
+    .success-message,
+    .error-message {
+      display: none;
+      padding: 20px 24px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.6;
+      animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .success-message {
+      background: #D1FAE5;
+      color: #065F46;
+      border-left: 5px solid #10B981;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+    }
+
+    .error-message {
+      background: #FEE2E2;
+      color: #991B1B;
+      border-left: 5px solid #DC2626;
+      box-shadow: 0 4px 15px rgba(220, 38, 38, 0.2);
+    }
+
+    /* ============================================
+       TICKET STATUS CARD
+       ============================================ */
+    .ticket-status-card {
+      display: none;
+      background: white;
+      border-radius: 14px;
+      padding: 28px;
+      margin-top: 24px;
+      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.12);
+      animation: fadeInScale 0.4s ease;
+    }
+
+    @keyframes fadeInScale {
+      from {
+        opacity: 0;
+        transform: scale(0.96);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .ticket-status-card.show {
+      display: block;
+    }
+
+    .ticket-status-card h2 {
+      font-size: 19px;
+      color: #1E293B;
+      margin-bottom: 18px;
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 10px 18px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .status-badge.not-completed {
+      background: #FEF3C7;
+      color: #92400E;
+      border: 2px solid #F59E0B;
+    }
+
+    .status-badge.completed {
+      background: #D1FAE5;
+      color: #065F46;
+      border: 2px solid #10B981;
+    }
+
+    .status-badge.closed {
+      background: #E0E7FF;
+      color: #3730A3;
+      border: 2px solid #6366F1;
+    }
+
+    .status-badge.pending {
+      background: #DBEAFE;
+      color: #1E3A8A;
+      border: 2px solid #3B82F6;
+    }
+
+    .ticket-info {
+      border-top: 2px solid #E2E8F0;
+      padding-top: 20px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 14px 0;
+      border-bottom: 1px solid #F1F5F9;
+      gap: 16px;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #64748B;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    .info-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1E293B;
+      text-align: right;
+      word-break: break-word;
+    }
+
+    .reason-box {
+      margin-top: 24px;
+      padding: 18px 20px;
+      background: #FEF3C7;
+      border-left: 5px solid #F59E0B;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+    }
+
+    .reason-box.empty {
+      background: #F1F5F9;
+      border-left: 5px solid #94A3B8;
+    }
+
+    .reason-label {
+      font-size: 12px;
+      font-weight: 800;
+      color: #78350F;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .reason-text {
+      font-size: 14px;
+      color: #1E293B;
+      line-height: 1.7;
+      font-weight: 500;
+      white-space: pre-wrap;
+    }
+
+    /* ============================================
+       FOOTER
+       ============================================ */
+    .footer {
+      text-align: center;
+      padding: 24px 20px;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 13px;
+    }
+
+    .footer a {
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* ============================================
+       MOBILE RESPONSIVE
+       ============================================ */
+    @media (max-width: 768px) {
+      body {
+        padding: 16px;
+      }
+
+      .header-brand h1 {
+        font-size: 24px;
+      }
+
+      .tab-button {
+        font-size: 14px;
+        padding: 16px 14px;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .cheat-sheet {
+        padding: 24px 20px;
+      }
+
+      .form-card {
+        padding: 28px 24px;
+      }
+
+      .btn-container {
+        flex-direction: column-reverse;
+        gap: 12px;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .info-row {
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .info-value {
+        text-align: left;
+      }
+    }
+
+    @media (max-width: 480px) {
+
+      .form-input,
+      .form-textarea,
+      .form-select {
+        font-size: 16px;
+        /* Prevent zoom on iOS */
+      }
+    }
+
+    /* ============================================
+       ACCESSIBILITY
+       ============================================ */
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    *:focus-visible {
+      outline: 3px solid #667eea;
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Header Branding -->
+  <div class="header-brand">
+    <h1><i class="fas fa-bolt"></i> BillFree Quick-Fix</h1>
+    <p>Fast Support for Your Business</p>
+  </div>
+
+  <div class="container">
+
+    <!-- Tab Navigation -->
+    <div class="tab-navigation" role="tablist">
+      <button class="tab-button active" onclick="switchTab('create')" role="tab" aria-selected="true"
+        aria-controls="create-tab" id="create-tab-button">
+        <i class="fas fa-plus-circle"></i>
+        <span>Create Ticket</span>
+      </button>
+      <button class="tab-button" onclick="switchTab('status')" role="tab" aria-selected="false"
+        aria-controls="status-tab" id="status-tab-button">
+        <i class="fas fa-search"></i>
+        <span>Check Status</span>
+      </button>
+    </div>
+
+    <!-- Cheat Sheet -->
+    <div class="cheat-sheet" id="cheat-sheet">
+      <div class="cheat-sheet-title">
+        <i class="fas fa-band-aid"></i>
+        Merchant Quick-Fix Cheat Sheet
+      </div>
+      <div class="cheat-sheet-subtitle">
+        <i class="fas fa-hand"></i>
+        STOP! Try the Golden Rules First
+      </div>
+      <ul class="checklist">
+        <li>
+          <i class="fas fa-wifi"></i>
+          <span><strong>Internet Check:</strong> Can you open Google? Test your internet connection first.</span>
+        </li>
+        <li>
+          <i class="fas fa-print"></i>
+          <span><strong>Printer Check:</strong> Is "Billfree Printer" selected in your POS software?</span>
+        </li>
+        <li>
+          <i class="fas fa-plug"></i>
+          <span><strong>Hardware Check:</strong> Are USB cables tight? Is the printer powered ON?</span>
+        </li>
+        <li class="magic-fix">
+          <i class="fas fa-magic"></i>
+          <span><strong>✨ The Magic Fix:</strong> RESTART THE COMPUTER. This solves 80% of issues!</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- CREATE TICKET TAB -->
+    <div class="form-card active" id="create-tab" role="tabpanel">
+      <div class="form-header">
+        <h1><i class="fas fa-ticket-alt"></i> Create Support Ticket</h1>
+        <p class="subtitle">Still having issues after trying the checklist? Create a ticket below and our team will
+          contact you shortly.</p>
+        <span class="badge"><i class="fas fa-headset"></i> BillFree Support Team</span>
+      </div>
+
+      <div id="success-message" class="success-message" role="alert"></div>
+      <div id="error-message" class="error-message" role="alert"></div>
+
+      <form id="ticket-form" novalidate>
+
+        <!-- MID -->
+        <div class="form-group">
+          <label class="form-label" for="mid">
+            Merchant ID (MID)<span class="required">*</span>
+          </label>
+          <input type="text" class="form-input" id="mid" name="mid" placeholder="Enter your Merchant ID" required
+            autocomplete="off" maxlength="50">
+          <span class="form-hint">
+            <i class="fas fa-hashtag"></i> Your unique merchant identification number
+          </span>
+        </div>
+
+        <!-- Business Name -->
+        <div class="form-group">
+          <label class="form-label" for="business">
+            Business Name<span class="required">*</span>
+          </label>
+          <input type="text" class="form-input" id="business" name="business"
+            placeholder="Enter your business or store name" required autocomplete="organization" maxlength="200">
+          <span class="form-hint">
+            <i class="fas fa-building"></i> Your business or store name
+          </span>
+        </div>
+
+        <!-- Phone -->
+        <div class="form-group">
+          <label class="form-label" for="phone">
+            Phone Number<span class="required">*</span>
+          </label>
+          <input type="tel" class="form-input" id="phone" name="phone" placeholder="10-digit mobile number" required
+            maxlength="10" pattern="[6-9][0-9]{9}" autocomplete="tel">
+          <span class="form-hint">
+            <i class="fas fa-phone"></i> 10-digit mobile number (starts with 6-9, no country code)
+          </span>
+        </div>
+
+        <!-- Support Type -->
+        <div class="form-group">
+          <label class="form-label" for="supportType">
+            Support Type<span class="required">*</span>
+          </label>
+          <select class="form-select" id="supportType" name="supportType" required>
+            <option value="Customer Support" selected>👥 Customer Support</option>
+            <option value="IT Floor Support">🛠️ IT Floor Support</option>
+          </select>
+          <span class="form-hint">
+            <i class="fas fa-layer-group"></i> Select the type of support you need
+          </span>
+        </div>
+
+        <!-- POS (Optional) -->
+        <div class="form-group">
+          <label class="form-label" for="pos">
+            POS System <span class="optional">(optional)</span>
+          </label>
+          <input type="text" class="form-input" id="pos" name="pos" placeholder="e.g., Ginesys, Marg, Custom POS"
+            maxlength="50" autocomplete="off">
+          <span class="form-hint">
+            <i class="fas fa-desktop"></i> Point of Sale system you're using (if applicable)
+          </span>
+        </div>
+
+        <!-- Issue Description -->
+        <div class="form-group">
+          <label class="form-label" for="concern">
+            Describe Your Issue<span class="required">*</span>
+          </label>
+          <textarea class="form-textarea" id="concern" name="concern" placeholder="Describe your issue in detail...
+
+Examples:
+- What were you trying to do?
+- What error message did you see?
+- When did this start happening?
+- Have you tried the Quick-Fix steps above?
+
+Be as detailed as possible - more details = faster resolution!" required></textarea>
+          <span class="form-hint">
+            <i class="fas fa-lightbulb"></i> Be as detailed as you want! More details help us resolve faster.
+          </span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="btn-container">
+          <button type="button" class="btn btn-secondary" onclick="resetForm()">
+            <i class="fas fa-redo"></i> Clear Form
+          </button>
+          <button type="submit" class="btn btn-primary" id="submit-btn">
+            <i class="fas fa-paper-plane"></i> Submit Ticket
+          </button>
+        </div>
+      </form>
+
+      <!-- Loading State -->
+      <div id="loading" class="loading">
+        <div class="spinner" role="status">
+          <span class="visually-hidden">Creating your ticket...</span>
+        </div>
+        <p>Creating your ticket...</p>
+      </div>
+    </div>
+
+    <!-- CHECK STATUS TAB -->
+    <div class="form-card" id="status-tab" role="tabpanel">
+      <div class="form-header">
+        <h1><i class="fas fa-search"></i> Check Ticket Status</h1>
+        <p class="subtitle">Enter your Ticket ID or MID to check the current status of your support ticket.</p>
+      </div>
+
+      <div id="status-error" class="error-message" role="alert"></div>
+
+      <form id="status-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="search-input">
+            Ticket ID or MID<span class="required">*</span>
+          </label>
+          <input type="text" class="form-input" id="search-input" name="search"
+            placeholder="Enter Ticket ID (e.g., BF-TKT-2026-01-1234) or MID" required autocomplete="off">
+          <span class="form-hint">
+            <i class="fas fa-info-circle"></i> Enter the Ticket ID you received or your Merchant ID
+          </span>
+        </div>
+
+        <div class="btn-container">
+          <button type="button" class="btn btn-secondary" onclick="clearStatus()">
+            <i class="fas fa-times"></i> Clear
+          </button>
+          <button type="submit" class="btn btn-primary" id="status-btn">
+            <i class="fas fa-search"></i> Check Status
+          </button>
+        </div>
+      </form>
+
+      <!-- Status Loading State -->
+      <div id="status-loading" class="loading">
+        <div class="spinner" role="status">
+          <span class="visually-hidden">Looking up ticket...</span>
+        </div>
+        <p>Looking up your ticket...</p>
+      </div>
+
+      <!-- Ticket Status Display -->
+      <div id="ticket-status-card" class="ticket-status-card"></div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>&copy; 2026 BillFree. All rights reserved. | <a href="https://billfree.in" target="_blank">billfree.in</a></p>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    'use strict';
+
+    // ============================================
+    // CONFIGURATION
+    // ============================================
+    const CONFIG = {
+      AUTO_RESET_DELAY: 10000,  // 10 seconds
+      SCROLL_BEHAVIOR: 'smooth'
+    };
+
+    // ============================================
+    // TAB SWITCHING
+    // ============================================
+    function switchTab(tab) {
+      const createTab = document.getElementById('create-tab');
+      const statusTab = document.getElementById('status-tab');
+      const cheatSheet = document.getElementById('cheat-sheet');
+      const createButton = document.getElementById('create-tab-button');
+      const statusButton = document.getElementById('status-tab-button');
+
+      createButton.classList.remove('active');
+      statusButton.classList.remove('active');
+      createButton.setAttribute('aria-selected', 'false');
+      statusButton.setAttribute('aria-selected', 'false');
+
+      if (tab === 'create') {
+        createTab.classList.add('active');
+        statusTab.classList.remove('active');
+        cheatSheet.style.display = 'block';
+        createButton.classList.add('active');
+        createButton.setAttribute('aria-selected', 'true');
+
+        setTimeout(() => document.getElementById('mid').focus(), 300);
+      } else {
+        statusTab.classList.add('active');
+        createTab.classList.remove('active');
+        cheatSheet.style.display = 'none';
+        statusButton.classList.add('active');
+        statusButton.setAttribute('aria-selected', 'true');
+
+        setTimeout(() => document.getElementById('search-input').focus(), 300);
+      }
+
+      window.scrollTo({ top: 0, behavior: CONFIG.SCROLL_BEHAVIOR });
+    }
+
+    // ============================================
+    // PAGE LOAD
+    // ============================================
+    window.addEventListener('DOMContentLoaded', function () {
+      console.log('✅ Quick-Fix Portal v4.0 initialized');
+      document.getElementById('mid').focus();
+
+      // Phone input formatting
+      const phoneInput = document.getElementById('phone');
+      phoneInput.addEventListener('input', function () {
+        this.value = this.value.replace(/\D/g, '').substring(0, 10);
+      });
+
+      // Prevent Enter submit (except textarea)
+      document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('keypress', function (e) {
+          if (e.key === 'Enter') e.preventDefault();
+        });
+      });
+    });
+
+    // ============================================
+    // CREATE TICKET FORM SUBMISSION
+    // ============================================
+    document.getElementById('ticket-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      console.log('📝 Form submission started');
+
+      // Get form values
+      const mid = document.getElementById('mid').value.trim();
+      const business = document.getElementById('business').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const supportType = document.getElementById('supportType').value;
+      const pos = document.getElementById('pos').value.trim();
+      const concern = document.getElementById('concern').value.trim();
+
+      // Client-side validation
+      if (!mid || !business || !phone || !concern) {
+        showError('Please fill in all required fields (marked with *)');
+        return;
+      }
+
+      // Phone validation
+      if (!/^[6-9][0-9]{9}$/.test(phone)) {
+        showError('Please enter a valid 10-digit phone number starting with 6, 7, 8, or 9');
+        document.getElementById('phone').focus();
+        return;
+      }
+
+      // Build ticket data
+      const ticketData = {
+        mid: mid,
+        business: business,
+        phone: phone,
+        supportType: supportType,
+        pos: pos || '',
+        concern: concern
+      };
+
+      console.log('📦 Ticket data:', ticketData);
+
+      // Show loading
+      document.getElementById('ticket-form').style.display = 'none';
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('submit-btn').disabled = true;
+
+      // Call backend
+      google.script.run
+        .withSuccessHandler(handleCreateSuccess)
+        .withFailureHandler(handleCreateFailure)
+        .createQuickFixTicket(ticketData);
+    });
+
+    /**
+     * Handle successful ticket creation
+     */
+    function handleCreateSuccess(response) {
+      try {
+        console.log('📥 Response:', response);
+
+        const result = JSON.parse(response);
+
+        if (result.success) {
+          const data = result.data;
+
+          console.log('✅ Ticket created:', data.ticketId);
+
+          const supportIcon = data.supportType === 'Customer Support'
+            ? '<i class="fas fa-user-tie"></i>'
+            : '<i class="fas fa-tools"></i>';
+
+          const notificationStatus = data.notificationSent
+            ? '<span style="color: #059669;">✓ WhatsApp sent</span>'
+            : '<span style="color: #94A3B8;">○ Notification pending</span>';
+
+          const successMsg = `
+            <div style="text-align: left;">
+              <div style="font-size: 16px; margin-bottom: 12px;">
+                <i class="fas fa-check-circle"></i> <strong>Ticket Created Successfully!</strong>
+              </div>
+              
+              <div style="margin-top: 16px; padding: 16px; background: rgba(255, 255, 255, 0.5); border-radius: 8px;">
+                
+                <div style="margin-bottom: 10px; font-size: 15px; font-weight: 700;">
+                  <i class="fas fa-ticket-alt"></i> Ticket ID
+                </div>
+                <div style="color: #667eea; font-family: monospace; font-size: 18px; font-weight: 700; margin-bottom: 16px;">
+                  ${data.ticketId}
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 14px;">
+                  <div><i class="fas fa-user-tie"></i> <strong>Assigned to:</strong> ${data.assignedAgent}</div>
+                  <div><i class="fas fa-building"></i> <strong>Business:</strong> ${data.business}</div>
+                  <div>${supportIcon} <strong>Support Type:</strong> ${data.supportType}</div>
+                  ${data.pos && data.pos !== '-' ? `<div><i class="fas fa-desktop"></i> <strong>POS:</strong> ${data.pos}</div>` : ''}
+                  <div><i class="fas fa-phone"></i> <strong>Contact:</strong> ${data.phone}</div>
+                  <div style="margin-top: 8px;">${notificationStatus}</div>
+                </div>
+              </div>
+              
+              <div style="margin-top: 16px; padding: 14px; background: #EEF2FF; border-radius: 8px; font-size: 13px;">
+                <div style="margin-bottom: 8px; color: #059669;">
+                  <i class="fas fa-clock"></i> <strong>What's Next?</strong>
+                </div>
+                <div style="color: #475569; line-height: 1.6;">
+                  • Our team will contact you at <strong>${data.phone}</strong> shortly<br>
+                  • Track your ticket: Switch to "Check Status" tab<br>
+                  • Enter Ticket ID: <code style="background: white; padding: 2px 6px; border-radius: 4px; font-family: monospace;">${data.ticketId}</code>
+                </div>
+              </div>
+              
+              <div style="margin-top: 12px; font-size: 12px; color: #64748B; text-align: center;">
+                Processing time: ${data.processingTime}ms | Ref: ${result.correlationId}
+              </div>
+            </div>
+          `;
+
+          showSuccess(successMsg);
+
+          // Reset form
+          document.getElementById('ticket-form').reset();
+          document.getElementById('supportType').value = 'Customer Support';
+
+          // Auto-reset
+          setTimeout(resetForm, CONFIG.AUTO_RESET_DELAY);
+
+        } else {
+          console.error('❌ Backend error:', result.error);
+
+          let errorMsg = result.error || 'Failed to create ticket. Please try again.';
+          if (result.details && result.details.technicalError) {
+            errorMsg += `<div style="margin-top:8px; font-size:11px; color:#7f1d1d; background:#fef2f2; padding:8px; border-radius:4px; font-family:monospace; word-break:break-all;">Technical: ${result.details.technicalError}</div>`;
+          }
+
+          showError(errorMsg);
+          document.getElementById('ticket-form').style.display = 'block';
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('submit-btn').disabled = false;
+        }
+
+      } catch (e) {
+        console.error('❌ Parse error:', e);
+        showError('Error processing response. Please try again. <br><small>' + e.message + '</small>');
+        document.getElementById('ticket-form').style.display = 'block';
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('submit-btn').disabled = false;
+      }
+    }
+
+    /**
+     * Handle ticket creation failure
+     */
+    function handleCreateFailure(error) {
+      console.error('❌ Network error:', error);
+
+      showError(`Network error: ${error.message}. Please check your connection and try again.`);
+      document.getElementById('ticket-form').style.display = 'block';
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('submit-btn').disabled = false;
+    }
+
+    // ============================================
+    // CHECK STATUS FORM SUBMISSION
+    // ============================================
+    document.getElementById('status-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const searchValue = document.getElementById('search-input').value.trim();
+
+      console.log('🔍 Status check:', searchValue);
+
+      if (!searchValue) {
+        showStatusError('Please enter a Ticket ID or MID');
+        return;
+      }
+
+      // Show loading
+      document.getElementById('status-form').style.display = 'none';
+      document.getElementById('status-loading').style.display = 'block';
+      document.getElementById('status-btn').disabled = true;
+      document.getElementById('ticket-status-card').classList.remove('show');
+
+      // Call backend
+      google.script.run
+        .withSuccessHandler(handleStatusSuccess)
+        .withFailureHandler(handleStatusFailure)
+        .getTicketStatus(searchValue);
+    });
+
+    /**
+     * Handle successful status check
+     */
+    function handleStatusSuccess(response) {
+      try {
+        console.log('📥 Status response:', response);
+
+        const result = JSON.parse(response);
+
+        if (result.success) {
+          console.log('✅ Ticket found:', result.data.ticket.id);
+          displayTicketStatus(result.data.ticket);
+        } else {
+          console.log('⚠️ Ticket not found');
+          showStatusError(result.error || 'Ticket not found');
+          document.getElementById('status-form').style.display = 'block';
+          document.getElementById('status-loading').style.display = 'none';
+          document.getElementById('status-btn').disabled = false;
+        }
+
+      } catch (e) {
+        console.error('❌ Parse error:', e);
+        showStatusError('Error processing response. Please try again.');
+        document.getElementById('status-form').style.display = 'block';
+        document.getElementById('status-loading').style.display = 'none';
+        document.getElementById('status-btn').disabled = false;
+      }
+    }
+
+    /**
+     * Handle status check failure
+     */
+    function handleStatusFailure(error) {
+      console.error('❌ Network error:', error);
+
+      showStatusError(`Network error: ${error.message}. Please check your connection.`);
+      document.getElementById('status-form').style.display = 'block';
+      document.getElementById('status-loading').style.display = 'none';
+      document.getElementById('status-btn').disabled = false;
+    }
+
+    /**
+     * Display ticket status details
+     */
+    function displayTicketStatus(ticket) {
+      // ✅ Map backend fields to display format
+      const formatDate = (dateVal) => {
+        if (!dateVal) return '-';
+        try {
+          const d = new Date(dateVal);
+          if (isNaN(d.getTime())) return String(dateVal);
+          const pad = n => (n < 10 ? '0' : '') + n;
+          return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`;
+        } catch (e) {
+          return String(dateVal);
+        }
+      };
+
+      // Ensure all fields have values (fallback to empty string if undefined)
+      const ticketData = {
+        id: ticket.id || '-',
+        date: formatDate(ticket.timestamp),
+        business: ticket.business || '-',
+        mid: ticket.mid || '-',
+        supportType: ticket.supportType || 'Customer Support',
+        agent: ticket.agent || '-',
+        concern: ticket.concern || '-',
+        status: ticket.status || 'Not Completed',
+        reason: ticket.reason || '',
+        phone: ticket.phone || ''
+      };
+
+      const statusCard = document.getElementById('ticket-status-card');
+      const statusClass = ticketData.status.toLowerCase().replace(/ /g, '-');
+
+      const supportIcon = ticketData.supportType === 'Customer Support'
+        ? '<i class="fas fa-user-tie"></i>'
+        : '<i class="fas fa-tools"></i>';
+
+      let statusHTML = `
+    <h2><i class="fas fa-ticket-alt"></i> ${ticketData.id}</h2>
+    
+    <span class="status-badge ${statusClass}">
+      <i class="fas fa-circle" style="font-size: 8px;"></i> ${ticketData.status}
+    </span>
+    
+    <div class="ticket-info">
+      <div class="info-row">
+        <span class="info-label">Date</span>
+        <span class="info-value">${ticketData.date}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Business</span>
+        <span class="info-value">${ticketData.business}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">MID</span>
+        <span class="info-value">${ticketData.mid}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Support Type</span>
+        <span class="info-value">${supportIcon} ${ticketData.supportType}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Assigned Agent</span>
+        <span class="info-value">${ticketData.agent}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Issue</span>
+        <span class="info-value">${ticketData.concern}</span>
+      </div>
+    </div>
+  `;
+
+      // ✅ ADD REASON/NOTES SECTION - SHOW ONLY IF NOT EMPTY
+      if (ticketData.reason && ticketData.reason.trim() !== '') {
+        // Determine box style based on status
+        let reasonBoxClass = 'reason-box';
+        let reasonIcon = 'fa-info-circle';
+        let reasonTitle = 'Notes';
+
+        if (ticketData.status === 'Not Completed') {
+          reasonBoxClass = 'reason-box reason-incomplete';
+          reasonIcon = 'fa-exclamation-triangle';
+          reasonTitle = 'Reason for Incomplete';
+        } else if (ticketData.status === 'Closed') {
+          reasonBoxClass = 'reason-box reason-closed';
+          reasonIcon = 'fa-check-circle';
+          reasonTitle = 'Closure Notes';
+        } else if (ticketData.status === "Can't Do") {
+          reasonBoxClass = 'reason-box reason-cant-do';
+          reasonIcon = 'fa-ban';
+          reasonTitle = 'Why This Cannot Be Done';
+        }
+
+        statusHTML += `
+      <div class="${reasonBoxClass}">
+        <div class="reason-label">
+          <i class="fas ${reasonIcon}"></i> ${reasonTitle}
+        </div>
+        <div class="reason-text">${escapeHtml(ticketData.reason)}</div>
+      </div>
+    `;
+      }
+
+      statusCard.innerHTML = statusHTML;
+      statusCard.classList.add('show');
+
+      // Smooth scroll to status card
+      setTimeout(() => {
+        statusCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+
+    // ✅ ADD HTML ESCAPE FUNCTION FOR SECURITY
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+
+    // ============================================
+    // UTILITY FUNCTIONS
+    // ============================================
+
+    function showSuccess(message) {
+      const elem = document.getElementById('success-message');
+      elem.innerHTML = message;
+      elem.style.display = 'block';
+      document.getElementById('error-message').style.display = 'none';
+
+      setTimeout(() => {
+        elem.scrollIntoView({ behavior: CONFIG.SCROLL_BEHAVIOR, block: 'nearest' });
+      }, 100);
+    }
+
+    function showError(message) {
+      const elem = document.getElementById('error-message');
+      elem.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + message;
+      elem.style.display = 'block';
+      document.getElementById('success-message').style.display = 'none';
+
+      setTimeout(() => {
+        elem.scrollIntoView({ behavior: CONFIG.SCROLL_BEHAVIOR, block: 'nearest' });
+      }, 100);
+    }
+
+    function showStatusError(message) {
+      const elem = document.getElementById('status-error');
+      elem.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + message;
+      elem.style.display = 'block';
+
+      setTimeout(() => {
+        elem.scrollIntoView({ behavior: CONFIG.SCROLL_BEHAVIOR, block: 'nearest' });
+      }, 100);
+    }
+
+    function resetForm() {
+      document.getElementById('ticket-form').reset();
+      document.getElementById('ticket-form').style.display = 'block';
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('success-message').style.display = 'none';
+      document.getElementById('error-message').style.display = 'none';
+      document.getElementById('submit-btn').disabled = false;
+      document.getElementById('supportType').value = 'Customer Support';
+
+      setTimeout(() => document.getElementById('mid').focus(), 100);
+
+      console.log('🔄 Form reset');
+    }
+
+    function clearStatus() {
+      document.getElementById('status-form').reset();
+      document.getElementById('status-error').style.display = 'none';
+      document.getElementById('ticket-status-card').classList.remove('show');
+
+      setTimeout(() => document.getElementById('search-input').focus(), 100);
+
+      console.log('🔄 Status cleared');
+    }
+
+    // ============================================
+    // KEYBOARD SHORTCUTS
+    // ============================================
+    document.addEventListener('keydown', function (e) {
+      // Ctrl+K: Focus search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        switchTab('status');
+      }
+
+      // Escape: Clear
+      if (e.key === 'Escape') {
+        const activeTab = document.querySelector('.form-card.active');
+        if (activeTab && activeTab.id === 'create-tab') {
+          resetForm();
+        } else if (activeTab && activeTab.id === 'status-tab') {
+          clearStatus();
+        }
+      }
+    });
+
+    // ============================================
+    // CONSOLE BRANDING
+    // ============================================
+    console.log('%c🎫 BillFree Quick-Fix Portal v4.0', 'font-size: 16px; font-weight: bold; color: #667eea;');
+    console.log('%cProduction Build | February 2026', 'color: #64748B;');
+
+    // ============================================
+    // 📧 AUTO EMAIL DETECTION & INITIALIZATION
+    // ============================================
+
+    /**
+     * Initialize user email on page load
+     * Fetches from backend and pre-fills if available
+     */
+    function initializeUserEmail() {
+      console.log('📧 Attempting auto email detection...');
+
+      google.script.run
+        .withSuccessHandler(function (response) {
+          try {
+            const result = JSON.parse(response);
+            console.log('📧 Email detection result:', result);
+
+            if (result.success && result.email && result.isAutoDetected) {
+              // Auto-detected email - show as readonly with badge
+              showAutoEmail(result.email, result.method);
+            } else {
+              console.log('📧 No auto-detected email, user can enter manually');
+            }
+          } catch (e) {
+            console.warn('📧 Error parsing email response:', e);
+          }
+        })
+        .withFailureHandler(function (error) {
+          console.warn('📧 Email detection failed:', error);
+        })
+        .getCurrentUserEmail();
+    }
+
+    /**
+     * Display auto-detected email with visual indicator
+     */
+    function showAutoEmail(email, method) {
+      // Create or update the email display area
+      let emailContainer = document.getElementById('auto-email-container');
+
+      if (!emailContainer) {
+        // Create container near the form header
+        const formCard = document.getElementById('create-tab');
+        if (formCard) {
+          const formHeader = formCard.querySelector('.form-group') || formCard.firstChild;
+
+          emailContainer = document.createElement('div');
+          emailContainer.id = 'auto-email-container';
+          emailContainer.style.cssText = `
+            background: linear-gradient(135deg, #E0E7FF, #DDD6FE);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid #C7D2FE;
+            animation: slideIn 0.3s ease-out;
+          `;
+
+          emailContainer.innerHTML = `
+            <div style="
+              width: 42px;
+              height: 42px;
+              border-radius: 50%;
+              background: linear-gradient(135deg, #6366F1, #8B5CF6);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              flex-shrink: 0;
+            ">
+              <i class="fas fa-user-check" style="color: white; font-size: 18px;"></i>
+            </div>
+            <div style="flex: 1;">
+              <div style="font-size: 11px; color: #6366F1; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">
+                ✓ Logged in as
+              </div>
+              <div id="detected-email" style="font-size: 15px; font-weight: 600; color: #1E293B;">
+                ${email}
+              </div>
+            </div>
+            <div style="
+              background: #22C55E;
+              color: white;
+              font-size: 10px;
+              font-weight: 700;
+              padding: 4px 10px;
+              border-radius: 20px;
+              text-transform: uppercase;
+            ">
+              Auto-detected
+            </div>
+          `;
+
+          // Insert at top of form
+          if (formHeader && formHeader.parentNode) {
+            formHeader.parentNode.insertBefore(emailContainer, formHeader);
+          }
+
+          console.log('📧 Email displayed: ' + email + ' (via ' + method + ')');
+        }
+      } else {
+        // Update existing container
+        const emailSpan = document.getElementById('detected-email');
+        if (emailSpan) emailSpan.textContent = email;
+      }
+    }
+
+    // Run email detection on page load
+    setTimeout(initializeUserEmail, 500);
+  </script>
+</body>
+
+</html>

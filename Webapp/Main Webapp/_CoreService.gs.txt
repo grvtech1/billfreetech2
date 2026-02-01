@@ -1,0 +1,248 @@
+/* ==================================================
+   💎 CORE SERVICE LIBRARY v1.0
+   Single Source of Truth for BillFree TechSupport Ops
+   
+   CONTAINS:
+   1. Configuration (Sheet IDs, Names)
+   2. Schema Definitions (Column Mappings)
+   3. Agent Directory & Security
+   4. Shared Utilities (Ticket ID Gen, Sanitization)
+   ================================================== */
+
+const CoreService = (function() {
+  
+  // 🔒 PRIVATE CONFIGURATION
+  const _CONFIG = Object.freeze({
+    SHEET_NAME: "IT Tracker 2",
+    SHEET_ID_KEY: "MAIN_SHEET_ID", // Store actual ID in Script Properties
+    APP_VERSION: "11.0.0 (Unified)",
+    
+    // Default fallback if property not set (Use with caution)
+    DEFAULT_SHEET_ID: "1J0q6ODzUllxO4Ft8ZL7VIRRedDP8ah8vcPROKzGJMZk" 
+  });
+
+  // 👥 AGENT DIRECTORY
+  // Centralized list for Dropdowns & Routing
+  const _AGENTS = [
+    { name: "Manjeet",      email: "manjeetkashyap.billfree@gmail.com", phonePropKey: "AGENT_PHONE_MANJEET" },
+    { name: "Suraj",        email: "suraj.billfree2@gmail.com",         phonePropKey: "AGENT_PHONE_SURAJ" },
+    { name: "Veer Bahadur", email: "veer.billfree@gmail.com",           phonePropKey: "AGENT_PHONE_VEER" }
+  ];
+
+  // 📝 DATA SCHEMA (The "Protocol")
+  // explicit column mapping to prevent mismatch
+  const _SCHEMA = Object.freeze({
+    COLUMNS: {
+      A: "Ticket ID",
+      B: "Timestamp",
+      C: "Email Address",
+      D: "IT Person",          // Agent/IT Person who handles ticket
+      E: "Requested By",
+      F: "MID",
+      G: "Business Name",
+      H: "POS",                // POS System
+      I: "Support Type",       // Customer Support, Floor Support, FOS Support, etc.
+      J: "Concern Related to", // Issue/Concern type
+      K: "Configuration",      // Config
+      L: "Remark if any",      // Remark/Notes
+      M: "Status",             // Status (Completed, Not Completed, Closed, Can't Do)
+      N: "Reason for Incomplete",  // Reason/Notes for status
+      O: "Phone Number"        // Phone Number extracted from remark
+    },
+    // Map human keys to 0-based index
+    INDEX: {
+      TICKET_ID: 0,
+      TIMESTAMP: 1,
+      EMAIL: 2,
+      AGENT: 3,
+      REQUESTED_BY: 4,
+      MID: 5,
+      BUSINESS: 6,
+      POS: 7,
+      SUPPORT_TYPE: 8,
+      CONCERN: 9,
+      CONFIG: 10,
+      REMARK: 11,
+      STATUS: 12,
+      REASON: 13,
+      PHONE: 14 // New Column O
+    }
+  });
+
+  return {
+    /**
+     * Get Configuration Value
+     */
+    getConfig: function(key) {
+      if (_CONFIG[key]) return _CONFIG[key];
+      // Try Script Properties for dynamic keys
+      return PropertiesService.getScriptProperties().getProperty(key);
+    },
+
+    /**
+     * Get Target Sheet ID safely
+     */
+    getSheetId: function() {
+      const propId = PropertiesService.getScriptProperties().getProperty(_CONFIG.SHEET_ID_KEY);
+      return propId || _CONFIG.DEFAULT_SHEET_ID;
+    },
+
+    /**
+     * Get Agent List (Public Info Only)
+     */
+    getAgentsList: function() {
+      return _AGENTS.map(a => ({ name: a.name, email: a.email }));
+    },
+    
+    /**
+     * Get Schema Constants
+     */
+    getSchema: function() {
+      return _SCHEMA;
+    },
+
+    /**
+     * 🆔 GENERATE TICKET ID (Standardized)
+     * Format: BF-TKT-YYYY-MM-XXXX
+     */
+    generateTicketId: function(sheet) {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const prefix = `BF-TKT-${year}-${month}-`;
+      
+      const lastRow = sheet.getLastRow();
+      let maxSerial = 0;
+      
+      if (lastRow >= 2) {
+        // Optimized: Only read Column A
+        const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues(); 
+        for (let i = 0; i < ids.length; i++) {
+            const val = String(ids[i][0]).trim();
+            if (val.startsWith(prefix)) {
+                const serial = parseInt(val.replace(prefix, ''), 10);
+                if (!isNaN(serial) && serial > maxSerial) maxSerial = serial;
+            }
+        }
+      }
+      
+      return prefix + String(maxSerial + 1).padStart(4, '0');
+    },
+
+    /**
+     * 🧹 SANITIZE INPUT (Shared)
+     */
+    sanitize: function(input, type = 'text') {
+      if (!input) return '';
+      let str = String(input).trim();
+      
+      if (type === 'phone') {
+        const cleaned = str.replace(/\D/g, ''); // Remove non-digits
+        return cleaned.substring(0, 10); // Max 10 chars
+      }
+      
+      if (type === 'email') {
+        return str.toLowerCase();
+      }
+      
+      return str;
+    },
+    
+    /**
+     * 📱 FORMAT PHONE (Shared)
+     */
+    formatPhone: function(raw) {
+        const clean = this.sanitize(raw, 'phone');
+        if (!clean) return '';
+        // Assuming India +91 convention for this client
+        return clean.length === 10 ? `+91${clean}` : clean;
+    },
+
+    /**
+     * 🚦 RATE LIMITING (Consolidated)
+     * Prevents abuse - shared across all apps
+     * @param {string} action - Action identifier
+     * @param {number} maxRequests - Max requests per window (default: 30)
+     * @param {number} windowSeconds - Time window in seconds (default: 60)
+     * @returns {Object} { allowed: boolean, count: number }
+     */
+    checkRateLimit: function(action, maxRequests = 30, windowSeconds = 60) {
+      try {
+        const userEmail = Session.getActiveUser().getEmail() || 'anonymous';
+        const cache = CacheService.getUserCache();
+        const key = `rate_${action}_${userEmail.replace(/[@.]/g, '_')}`;
+        
+        const currentCount = parseInt(cache.get(key) || '0');
+        
+        if (currentCount >= maxRequests) {
+          return { allowed: false, count: currentCount };
+        }
+        
+        cache.put(key, String(currentCount + 1), windowSeconds);
+        return { allowed: true, count: currentCount + 1 };
+        
+      } catch (e) {
+        Logger.log('Rate limit check error: ' + e.toString());
+        return { allowed: true, count: 0 }; // Fail open
+      }
+    },
+
+    /**
+     * 📝 AUDIT LOGGING (Consolidated)
+     * Unified audit trail across all apps
+     * @param {Object} ss - Spreadsheet object (or null to open by ID)
+     * @param {string} action - Action name
+     * @param {string} ticketId - Related ticket ID
+     * @param {Object} details - Additional details
+     * @param {string} severity - INFO, WARNING, ERROR
+     * @param {string} version - App version
+     */
+    logAudit: function(ss, action, ticketId, details = {}, severity = 'INFO', version = '11.0') {
+      try {
+        const spreadsheet = ss || SpreadsheetApp.openById(this.getSheetId());
+        const AUDIT_SHEET_NAME = 'Audit Log';
+        let auditSheet = spreadsheet.getSheetByName(AUDIT_SHEET_NAME);
+        
+        // Create audit sheet if it doesn't exist
+        if (!auditSheet) {
+          auditSheet = spreadsheet.insertSheet(AUDIT_SHEET_NAME);
+          auditSheet.appendRow([
+            'Timestamp', 'User Email', 'Action', 'Ticket ID', 
+            'Details', 'Severity', 'IP/Session', 'Version'
+          ]);
+          auditSheet.getRange(1, 1, 1, 8).setFontWeight('bold').setBackground('#F1F5F9');
+          auditSheet.setFrozenRows(1);
+        }
+        
+        const userEmail = Session.getActiveUser().getEmail() || 'system';
+        const sessionId = Session.getTemporaryActiveUserKey() || 'N/A';
+        
+        auditSheet.appendRow([
+          new Date(),
+          userEmail,
+          action,
+          ticketId || '-',
+          typeof details === 'object' ? JSON.stringify(details) : String(details || ''),
+          severity,
+          sessionId,
+          version
+        ]);
+        
+      } catch (e) {
+        Logger.log('Audit log error (non-critical): ' + e.toString());
+      }
+    },
+
+    /**
+     * 🔑 GENERATE CORRELATION ID
+     * Unique request tracking ID
+     */
+    generateCorrelationId: function() {
+      const now = new Date();
+      const timestamp = Utilities.formatDate(now, 'Asia/Kolkata', 'yyMMddHHmmss');
+      const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+      return `${timestamp}-${random}`;
+    }
+  };
+})();
+
