@@ -3,387 +3,334 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="BillFree TicketCreation">
+  <meta name="theme-color" content="#4F46E5">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="theme-color" content="#667eea">
   <title>BillFree QuickFix</title>
+  
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      height: 100%;
+      overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    }
+    
+    #loader {
+      position: fixed;
+      inset: 0;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      z-index: 9999;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
     }
-
-    /* ── SCREENS ───────────────────────────── */
-    .screen {
-      display: none;
-      width: 100%;
-      max-width: 440px;
+    
+    #loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
     }
-    .screen.active { display: block; }
-
-    /* ── CARD ──────────────────────────────── */
-    .card {
-      background: white;
-      border-radius: 20px;
-      padding: 48px 40px;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+    
+    .loader-content {
       text-align: center;
-      animation: slideUp 0.5s ease-out;
-    }
-    @keyframes slideUp {
-      from { opacity:0; transform:translateY(24px); }
-      to   { opacity:1; transform:translateY(0);    }
-    }
-
-    .logo { font-size: 64px; margin-bottom: 16px; }
-
-    h1 {
-      font-size: 26px;
-      font-weight: 700;
-      color: #1E293B;
-      margin-bottom: 6px;
-    }
-    .subtitle {
-      font-size: 13px;
-      color: #94A3B8;
-      margin-bottom: 32px;
-      font-weight: 500;
-    }
-
-    /* ── FORM ──────────────────────────────── */
-    label {
-      display: block;
-      text-align: left;
-      font-size: 13px;
-      font-weight: 600;
-      color: #475569;
-      margin-bottom: 6px;
-    }
-    input[type="email"] {
-      width: 100%;
-      padding: 14px 16px;
-      border: 2px solid #E2E8F0;
-      border-radius: 10px;
-      font-size: 15px;
-      font-family: inherit;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      margin-bottom: 20px;
-    }
-    input[type="email"]:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
-    }
-
-    /* ── BUTTON ────────────────────────────── */
-    .btn-primary {
-      width: 100%;
-      padding: 15px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
+      animation: fadeInUp 0.6s ease-out;
     }
-    .btn-primary:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 28px rgba(102,126,234,0.35);
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
-    .btn-primary:disabled {
-      opacity: 0.65;
-      cursor: not-allowed;
-      transform: none;
+    
+    .logo {
+      font-size: 64px;
+      margin-bottom: 24px;
+      animation: bounce 2s ease-in-out infinite;
     }
-
-    /* ── ALERT BANNERS ─────────────────────── */
-    .alert {
-      padding: 12px 16px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 500;
-      margin-bottom: 20px;
-      display: none;
-      text-align: left;
+    
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
     }
-    .alert.show { display: block; }
-    .alert-error   { background:#FEE2E2; color:#DC2626; border-left:4px solid #DC2626; }
-    .alert-success { background:#D1FAE5; color:#059669; border-left:4px solid #059669; }
-
-    /* ── SPINNER ───────────────────────────── */
+    
     .spinner {
-      width: 18px; height: 18px;
-      border: 2px solid rgba(255,255,255,0.35);
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
       border-top-color: white;
       border-radius: 50%;
-      animation: spin 0.75s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── FOOTER ────────────────────────────── */
-    .footer {
-      margin-top: 28px;
-      padding-top: 24px;
-      border-top: 1px solid #F1F5F9;
-      font-size: 12px;
-      color: #94A3B8;
-      line-height: 1.7;
-    }
-    .footer strong { color: #64748B; }
-
-    /* ── REDIRECT SCREEN ───────────────────── */
-    .redirect-card {
-      background: white;
-      border-radius: 20px;
-      padding: 48px 40px;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.25);
-      text-align: center;
-      animation: slideUp 0.5s ease-out;
-    }
-    .big-spinner {
-      width: 56px; height: 56px;
-      border: 4px solid #E2E8F0;
-      border-top-color: #667eea;
-      border-radius: 50%;
-      animation: spin 0.9s linear infinite;
+      animation: spin 0.8s linear infinite;
       margin: 0 auto 24px;
     }
-    .redirect-title {
-      font-size: 20px;
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .loader-title {
+      font-size: 28px;
       font-weight: 700;
-      color: #1E293B;
       margin-bottom: 8px;
+      letter-spacing: -0.5px;
     }
-    .redirect-sub {
+    
+    .loader-subtitle {
       font-size: 14px;
-      color: #64748B;
+      opacity: 0.9;
+      font-weight: 500;
+      margin-bottom: 16px;
     }
-    .redirect-email {
-      display: inline-block;
-      margin-top: 16px;
-      background: #F1F5F9;
-      padding: 6px 16px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #475569;
+    
+    .loader-version {
+      font-size: 12px;
+      opacity: 0.7;
+      font-weight: 500;
     }
-
-    /* ── ERROR SCREEN ──────────────────────── */
-    .error-big-icon { font-size: 56px; margin-bottom: 16px; }
-    .error-screen-title {
-      font-size: 22px;
+    
+    .progress-bar {
+      width: 200px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 2px;
+      margin: 24px auto 0;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .progress-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      background: white;
+      animation: fillProgress 2s ease-out forwards;
+    }
+    
+    @keyframes fillProgress {
+      to { width: 100%; }
+    }
+    
+    #app-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+      background: #F8FAFC;
+    }
+    
+    #error-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #F8FAFC;
+      align-items: center;
+      justify-content: center;
+      z-index: 9998;
+      padding: 20px;
+    }
+    
+    #error-screen.show {
+      display: flex;
+    }
+    
+    .error-content {
+      text-align: center;
+      max-width: 500px;
+    }
+    
+    .error-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+    
+    .error-title {
+      font-size: 24px;
       font-weight: 700;
       color: #1E293B;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
-    .error-screen-msg {
-      font-size: 14px;
+    
+    .error-message {
+      font-size: 16px;
       color: #64748B;
+      margin-bottom: 24px;
       line-height: 1.6;
-      margin-bottom: 28px;
     }
-    .btn-outline {
-      display: inline-block;
+    
+    .button-group {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .retry-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
       padding: 12px 24px;
-      border: 2px solid #667eea;
-      border-radius: 10px;
-      color: #667eea;
+      border: none;
+      border-radius: 8px;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      background: white;
-      text-decoration: none;
-      transition: all 0.2s;
+      transition: transform 0.2s ease;
     }
-    .btn-outline:hover { background: #667eea; color: white; }
+    
+    .retry-button:hover {
+      transform: translateY(-2px);
+    }
+    
+    .direct-link {
+      background: white;
+      color: #667eea;
+      padding: 12px 24px;
+      border: 2px solid #667eea;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .direct-link:hover {
+      background: #667eea;
+      color: white;
+    }
+    
+    @media (max-width: 768px) {
+      .logo { font-size: 48px; }
+      .loader-title { font-size: 24px; }
+      .loader-subtitle { font-size: 13px; }
+      .error-title { font-size: 20px; }
+      .button-group { flex-direction: column; }
+    }
   </style>
 </head>
 <body>
-
-  <!-- ══ SCREEN 1: LOGIN ══════════════════════════ -->
-  <div class="screen active" id="screen-login">
-    <div class="card">
+  <div id="loader">
+    <div class="loader-content">
       <div class="logo">🎫</div>
-      <h1>BillFree QuickFix</h1>
-      <p class="subtitle">TechSupport Ops v10.0 PRO</p>
-
-      <div class="alert alert-error"   id="alert-error"></div>
-      <div class="alert alert-success" id="alert-success"></div>
-
-      <form id="login-form" novalidate>
-        <label for="email">Work Email Address</label>
-        <input
-          type="email"
-          id="email"
-          placeholder="your.name@billfree.in"
-          autocomplete="email"
-          required
-          autofocus
-        >
-        <button type="submit" class="btn-primary" id="login-btn">
-          <span id="btn-label">Sign In to Dashboard</span>
-          <span id="btn-spin" class="spinner" style="display:none;"></span>
+      <div class="spinner"></div>
+      <h1 class="loader-title">BillFree QuickFix for Tech Ops</h1>
+      <p class="loader-subtitle">Loading your QuickFix...</p>
+      <p class="loader-version">v10.0 PRO • Powered by You</p>
+      <div class="progress-bar">
+        <div class="progress-fill"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="error-screen">
+    <div class="error-content">
+      <div class="error-icon">⚠️</div>
+      <h1 class="error-title">Unable to Load Application</h1>
+      <p class="error-message" id="error-message">
+        The application failed to load. Please check your connection and try again.
+      </p>
+      <div class="button-group">
+        <button class="retry-button" onclick="location.reload()">
+          🔄 Retry
         </button>
-      </form>
-
-      <div class="footer">
-        <p>✅ <strong>Authorized Team:</strong> Manjeet · Suraj · Veer · Neeraj · Gaurav</p>
-        <p style="margin-top:8px;">Need access? Contact <strong>gaurav.pal@billfree.in</strong></p>
+        <a 
+          href="https://script.google.com/macros/s/AKfycbxR1hNEFGcHbjoiRAqvAKWVVgZxMmTl5t25lDo8B2sbyUQ1uEg4R8hFRGn4Ia2ucauf/exec" 
+          class="direct-link"
+          target="_blank"
+        >
+          ↗️ Open Directly
+        </a>
       </div>
     </div>
   </div>
-
-  <!-- ══ SCREEN 2: REDIRECTING ════════════════════ -->
-  <div class="screen" id="screen-redirect">
-    <div class="redirect-card">
-      <div class="big-spinner"></div>
-      <div class="redirect-title">Authentication Successful!</div>
-      <div class="redirect-sub">Redirecting to your dashboard...</div>
-      <div class="redirect-email" id="redirect-email"></div>
-    </div>
-  </div>
-
-  <!-- ══ SCREEN 3: ERROR ══════════════════════════ -->
-  <div class="screen" id="screen-error">
-    <div class="card">
-      <div class="error-big-icon">⚠️</div>
-      <div class="error-screen-title">Connection Failed</div>
-      <div class="error-screen-msg" id="error-screen-msg">
-        Unable to reach the server. Please check your connection and try again.
-      </div>
-      <button class="btn-outline" onclick="showScreen('login')">← Try Again</button>
-    </div>
-  </div>
-
-
+  
+  <iframe 
+    id="app-frame"
+    src="https://script.google.com/macros/s/AKfycbxR1hNEFGcHbjoiRAqvAKWVVgZxMmTl5t25lDo8B2sbyUQ1uEg4R8hFRGn4Ia2ucauf/exec"
+    allow="clipboard-read; clipboard-write; camera; microphone"
+    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-popups-to-escape-sandbox allow-downloads"
+    referrerpolicy="strict-origin-when-cross-origin"
+    loading="eager"
+    title="BillFree TechSupport Operations"
+  ></iframe>
+  
   <script>
-    // ════════════════════════════════════════════════
-    // ⚠️  REPLACE WITH YOUR ACTUAL GAS DEPLOYMENT URL
-    // ════════════════════════════════════════════════
-    const BACKEND_URL =
-      'https://script.google.com/macros/s/AKfycbxR1hNEFGcHbjoiRAqvAKWVVgZxMmTl5t25lDo8B2sbyUQ1uEg4R8hFRGn4Ia2ucauf/exec';
-
-    // ────────────────────────────────────────────────
-    // SESSION CHECK — skip login if still valid
-    // ────────────────────────────────────────────────
-    (function checkSession() {
-      const token   = localStorage.getItem('bf_token');
-      const email   = localStorage.getItem('bf_email');
-      const expires = parseInt(localStorage.getItem('bf_expires') || '0');
-
-      if (token && email && Date.now() < expires) {
-        redirectToDashboard(token, email);
-      }
-    })();
-
-    // ────────────────────────────────────────────────
-    // FORM SUBMIT
-    // ────────────────────────────────────────────────
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email').value.trim();
-
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        showError('Please enter a valid email address.');
-        return;
-      }
-
-      setLoading(true);
-      hideAlerts();
-
-      try {
-        const res  = await fetch(`${BACKEND_URL}?action=get_sso_token&email=${encodeURIComponent(email)}`);
-        const data = await res.json();
-
-        if (data.success) {
-          // ✅ Store session
-          localStorage.setItem('bf_token',   data.token);
-          localStorage.setItem('bf_email',   data.validated_email || email);
-          localStorage.setItem('bf_expires', Date.now() + (data.expires_in * 1000));
-
-          showSuccess('✓ Authenticated! Redirecting...');
-
-          setTimeout(() => redirectToDashboard(data.token, data.validated_email || email), 800);
-
-        } else {
-          const msgs = {
-            'UNAUTHORIZED_EMAIL': '⚠️ Your email is not authorized. Contact the admin.',
-            'NOT_FOUND':          '⚠️ Email not found. Check for typos.',
-            'RATE_LIMITED':       '⚠️ Too many attempts. Please wait a moment.',
-          };
-          showError(msgs[data.error] || `⚠️ ${data.error || 'Authentication failed.'}`);
-          setLoading(false);
-        }
-
-      } catch (err) {
-        showScreen('error');
-        document.getElementById('error-screen-msg').textContent =
-          'Network error: ' + err.message;
-        setLoading(false);
-      }
+    const CONFIG = {
+      LOAD_TIMEOUT: 15000,
+      APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxR1hNEFGcHbjoiRAqvAKWVVgZxMmTl5t25lDo8B2sbyUQ1uEg4R8hFRGn4Ia2ucauf/exec'
+    };
+    
+    const frame = document.getElementById('app-frame');
+    const loader = document.getElementById('loader');
+    const errorScreen = document.getElementById('error-screen');
+    
+    let isLoaded = false;
+    let loadTimeout = null;
+    let loadStartTime = Date.now();
+    
+    frame.addEventListener('load', () => {
+      isLoaded = true;
+      clearTimeout(loadTimeout);
+      
+      const loadTime = Date.now() - loadStartTime;
+      
+      setTimeout(() => {
+        loader.classList.add('hidden');
+      }, 500);
+      
+      console.log('✅ BillFree Ops loaded successfully');
+      console.log(`⏱️ Load time: ${loadTime}ms`);
     });
-
-    // ────────────────────────────────────────────────
-    // REDIRECT  ← KEY FIX: window.location, NOT iframe
-    // ────────────────────────────────────────────────
-    function redirectToDashboard(token, email) {
-      showScreen('redirect');
-      document.getElementById('redirect-email').textContent = email;
-
-      // ✅ Direct browser navigation — no iframe, no X-Frame-Options issue
-      window.location.href = `${BACKEND_URL}?sso_token=${encodeURIComponent(token)}`;
+    
+    frame.addEventListener('error', () => {
+      handleLoadError('Failed to load the application. Please check your internet connection.');
+    });
+    
+    loadTimeout = setTimeout(() => {
+      if (!isLoaded) {
+        handleLoadError('Application is taking too long to load. This might be due to slow network.');
+      }
+    }, CONFIG.LOAD_TIMEOUT);
+    
+    function handleLoadError(message) {
+      loader.classList.add('hidden');
+      errorScreen.classList.add('show');
+      document.getElementById('error-message').textContent = message;
     }
-
-    // ────────────────────────────────────────────────
-    // UI HELPERS
-    // ────────────────────────────────────────────────
-    function showScreen(name) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.getElementById('screen-' + name).classList.add('active');
+    
+    if (window.self !== window.top) {
+      document.body.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui;">
+          <div style="text-align:center;padding:40px;">
+            <h1 style="font-size:48px;margin-bottom:20px;">🔒</h1>
+            <h2 style="color:#1E293B;margin-bottom:12px;">Security Error</h2>
+            <p style="color:#64748B;">This application cannot be embedded for security reasons.</p>
+            <a href="${CONFIG.APPS_SCRIPT_URL}" style="display:inline-block;margin-top:24px;padding:12px 24px;background:#667eea;color:white;text-decoration:none;border-radius:8px;">Open Application</a>
+          </div>
+        </div>
+      `;
     }
-
-    function setLoading(on) {
-      const btn  = document.getElementById('login-btn');
-      const lbl  = document.getElementById('btn-label');
-      const spin = document.getElementById('btn-spin');
-      btn.disabled      = on;
-      lbl.style.display = on ? 'none'         : 'inline';
-      spin.style.display= on ? 'inline-block' : 'none';
-      document.getElementById('email').disabled = on;
-    }
-
-    function showError(msg) {
-      const el = document.getElementById('alert-error');
-      el.textContent = msg;
-      el.classList.add('show');
-      document.getElementById('alert-success').classList.remove('show');
-    }
-
-    function showSuccess(msg) {
-      const el = document.getElementById('alert-success');
-      el.textContent = msg;
-      el.classList.add('show');
-      document.getElementById('alert-error').classList.remove('show');
-    }
-
-    function hideAlerts() {
-      document.getElementById('alert-error').classList.remove('show');
-      document.getElementById('alert-success').classList.remove('show');
-    }
-
+    
     console.log('🎫 BillFree QuickFix');
     console.log('⚡ Powered by You');
   </script>
